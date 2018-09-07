@@ -6,13 +6,13 @@ from replacer_func import *
 
 args = sys.argv
 
-OUTPUT_FILENAME = args[1] + '1'
+OUTPUT_FILENAME = args[1][:-1] + '1'
 
 rfile = open(args[1], 'r')
 wfile = open(OUTPUT_FILENAME, 'w')
 
 const_line = rfile.readlines()
-print(const_line)
+#print(const_line)
 registerTableList = []
 variableTableList = []
 thisfuncname = ''
@@ -51,7 +51,7 @@ assignRegister(variableTableList[0], ALG_NONE)
 #print(variableTableList[0].table)
 #replace const line var to reg
 replaced_line = replaceVariable(const_line, variableTableList)
-print(replaced_line)
+#print(replaced_line)
 #print(replaced_line[0])
 # replace insts
 for i, line in enumerate(replaced_line):
