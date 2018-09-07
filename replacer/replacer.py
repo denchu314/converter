@@ -15,7 +15,6 @@ const_line = rfile.readlines()
 #print(const_line)
 registerTableList = []
 variableTableList = []
-thisfuncname = ''
 
 ###################
 # REPLACER
@@ -24,16 +23,17 @@ thisfuncname = ''
 for i, line in enumerate(const_line):
      
     string = line.split()
-
+    bracket_deep = 0
+    listIndex = 0
     for j in range(len(string)):
-        ptn_func = re.match('^@.*(\(\))$', string[j])
-        # Function is detected
-        if ptn_func:
-            thisfuncname = ptn_func.group()
-            registerTableList.append(RegisterTable(thisfuncname))
-            variableTableList.append(VariableTable(thisfuncname))
-#            funcTableList.append(FuncTable(thisfuncname))
- #           funcTableList[len(funcTableList)].start = i
+        if (string[j] == 'define'):
+            funcName = string[2]
+            registerTableList.append(RegisterTable(funcName))
+            variableTableList.append(VariableTable(funcName))
+        if(string[j] == '{'):
+            bracket_deep+=1
+        if(string[j] == '}'):
+            bracket_deep-=1
         
         ptn_var = re.match('^%.*', string[j])
         # Variable is detected
@@ -43,8 +43,13 @@ for i, line in enumerate(const_line):
             if(varName[-1:]==','):
                 varName = varName[0:-1]
             # Var is first time
-            if(variableTableList[0].hasContainedVarName(varName)==False):
-                variableTableList[0].addRow(varName, ATTR_TEMP, i, i, '')
+            if(variableTableList[listIndex].searchVariable(varName)):
+                variableTableList[listIndex].addRow(varName, ATTR_TEMP, i, i, '')
+            else:
+                variableTableList[listIndex].addRow(varName, ATTR_TEMP, i, i, '')
+
+        if(bracket_deep == 1 and string[j] == '}'):
+            listIndex += 1
                 
 # reg is assined to variable
 assignRegister(variableTableList[0], ALG_NONE)

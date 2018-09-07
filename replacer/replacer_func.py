@@ -86,6 +86,12 @@ class VariableTable:
                 return True
         
         return False
+    def searchVariable(self, varName):
+        for i in range(len(self.table)):
+            if (self.table[i][VARNAME] == varName):
+                return i
+        
+        return None
 #class RegisterAssignmentTableList:
 #    def __init__(self):
 #        self = []
@@ -189,11 +195,13 @@ def replaceVariable(const_line, variableTableList):
                 # erase "," from string
                 if(varName[-1:]==','):
                     varName = varName[0:-1]
-                    tableIndex = searchVariable(varName, variableTableList[listIndex].table)
+                    #tableIndex = searchVariable(varName, variableTableList[listIndex].table)
+                    tableIndex = variableTableList[listIndex].searchVariable(varName)
                     string[j] = variableTableList[listIndex].table[tableIndex][ASSIGNEDREG] + ','
                 else:
                     # Variable is detected
-                    tableIndex = searchVariable(varName, variableTableList[listIndex].table)
+                    #tableIndex = searchVariable(varName, variableTableList[listIndex].table)
+                    tableIndex = variableTableList[listIndex].searchVariable(varName)
                     string[j] = variableTableList[listIndex].table[tableIndex][ASSIGNEDREG]
             if(bracket_deep == 1 and string[j] == '}'):
                 listIndex += 1
