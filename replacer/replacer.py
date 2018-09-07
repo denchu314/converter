@@ -42,9 +42,13 @@ for i, line in enumerate(const_line):
             # erase "," from string
             if(varName[-1:]==','):
                 varName = varName[0:-1]
-            # Var is first time
-            if(variableTableList[listIndex].searchVariable(varName)):
-                variableTableList[listIndex].addRow(varName, ATTR_TEMP, i, i, '')
+            
+            tableIndex = variableTableList[listIndex].searchVariable(varName)
+            
+            # Var has not been contained in table
+            if(tableIndex != -1):
+                variableTableList[listIndex].table[tableIndex][END] = i
+            # Var has already been contained in table
             else:
                 variableTableList[listIndex].addRow(varName, ATTR_TEMP, i, i, '')
 

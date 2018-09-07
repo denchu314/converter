@@ -91,7 +91,7 @@ class VariableTable:
             if (self.table[i][VARNAME] == varName):
                 return i
         
-        return None
+        return -1
 #class RegisterAssignmentTableList:
 #    def __init__(self):
 #        self = []
