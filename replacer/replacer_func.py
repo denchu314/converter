@@ -28,6 +28,9 @@ class RegisterTable:
         self.T = [True, True, True, True, True, True, True, True, True]
 
     def getRegister(self, regName):
+        if regName == 'ME':
+            return True
+        
         ptn = re.match('[TS][0-8]', regName)
         if ptn is None:
             print('Reg ' + regName + ' is not implemented.')
@@ -40,6 +43,9 @@ class RegisterTable:
             return True
 
     def releaseRegister(self, regName):
+        if regName == 'ME':
+            return True
+
         ptn = re.match('[TS][0-8]', regName)
         if ptn is None:
             print('Reg ' + regName + ' is not implemented.')
@@ -58,13 +64,13 @@ class RegisterTable:
         for i in range(len(self.S)):
             if (self.S[i] == True):
                 return 'S' + str(i)
-        return None
+        return 'ME'
 
     def searchForSaveVariable(self):
         for i in range(len(self.S)):
             if (self.S[i] == True):
                 return 'S' + str(i)
-        return None
+        return 'ME'
 
 #class RegisterAssignmentList:
 #    def __init__(self, varName, save, start, end, assignedReg):
@@ -108,17 +114,12 @@ def assignRegister(variableTableList, ALGORITHM):
         for j in range(len(variableTableList[i].table)):
             if(variableTableList[i].table[j][ATTR] == ATTR_SAVE):
                 assignedreg = registerTable.searchForSaveVariable()
-                if(assignedreg is None):
-                    variableTableList[i].table[j][ASSIGNEDREG] = 'ME'
-                else:
-                    variableTableList[i].table[j][ASSIGNEDREG] = assignedreg
 
             elif(variableTableList[i].table[j][ATTR] == ATTR_TEMP):
                 assignedreg = registerTable.searchForTempVariable()
-                if(assignedreg is None):
-                    variableTableList[i].table[j][ASSIGNEDREG] = 'ME'
-                else:
-                    variableTableList[i].table[j][ASSIGNEDREG] = assignedreg
+            
+            variableTableList[i].table[j][ASSIGNEDREG] = assignedreg
+            registerTable.getRegister(assignedreg)
 
 
 def makeAllocaInstList(assignedreg0):
