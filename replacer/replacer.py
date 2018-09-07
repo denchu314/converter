@@ -56,7 +56,7 @@ for i, line in enumerate(const_line):
             listIndex += 1
                 
 # reg is assined to variable
-assignRegister(variableTableList[0], ALG_NONE)
+assignRegister(variableTableList, ALG_NONE)
 #print(variableTableList[0].table)
 #replace const line var to reg
 replaced_line = replaceVariable(const_line, variableTableList)

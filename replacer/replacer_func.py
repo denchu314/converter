@@ -99,22 +99,27 @@ class VariableTable:
 #        self.append(RegisterAssignmentTable(funcName))
 
     #def searchVal
-def assignRegister(varTable, ALGORITHM):
-    regTable = RegisterTable(varTable.funcName)
-    for i in range(len(varTable.table)):
-        if(varTable.table[i][ATTR] == ATTR_SAVE):
-            assignedreg = regTable.searchForSaveVariable()
-            if(assignedreg is None):
-                varTable.table[i][ASSIGNEDREG] = 'ME'
-            else:
-                varTable.table[i][ASSIGNEDREG] = assignedreg
+def assignRegister(variableTableList, ALGORITHM):
 
-        elif(varTable.table[i][ATTR] == ATTR_TEMP):
-            assignedreg = regTable.searchForTempVariable()
-            if(assignedreg is None):
-                varTable.table[i][ASSIGNEDREG] = 'ME'
-            else:
-                varTable.table[i][ASSIGNEDREG] = assignedreg
+    for i in range(len(variableTableList)):
+        funcName = variableTableList[i].funcName
+        registerTable = RegisterTable(funcName)
+        
+        for j in range(len(variableTableList[i].table)):
+            if(variableTableList[i].table[j][ATTR] == ATTR_SAVE):
+                assignedreg = registerTable.searchForSaveVariable()
+                if(assignedreg is None):
+                    variableTableList[i].table[j][ASSIGNEDREG] = 'ME'
+                else:
+                    variableTableList[i].table[j][ASSIGNEDREG] = assignedreg
+
+            elif(variableTableList[i].table[j][ATTR] == ATTR_TEMP):
+                assignedreg = registerTable.searchForTempVariable()
+                if(assignedreg is None):
+                    variableTableList[i].table[j][ASSIGNEDREG] = 'ME'
+                else:
+                    variableTableList[i].table[j][ASSIGNEDREG] = assignedreg
+
 
 def makeAllocaInstList(assignedreg0):
     alloca_inst_list0 = 'lw ' + assignedreg0 + ' FP 0x00'
