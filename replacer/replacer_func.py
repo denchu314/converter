@@ -233,6 +233,31 @@ def makeRetInstList(string, funcname):
     ret_inst_list.append(ret_inst_list1)
     return '\n'.join(ret_inst_list)
 
+def makeLoadInstList(string):
+    dst = string[0]
+    src = string[5][0:-1]
+    
+    load_inst_list = []
+    #pointer?
+    #if(string[5][-1:] == '*'):
+    #hex value?
+    if(src[0:2] == '0x'):
+        load_inst_list0 = 'iAddi ASM ZERO ' + hex(int(src, 16) >> 16)
+        load_inst_list1 = 'Lsfti ASM ASM 0x10'
+        load_inst_list2 = 'iAddi ASM ASM ' + hex(int(src, 16) & 0xFFFF)
+        load_inst_list3 = 'lw ' + dst + ' ASM 0x00'
+    else:
+        load_inst_list0 = 'iAddi ASM ZERO ' + hex(int(src) >> 16)
+        load_inst_list1 = 'Lsfti ASM ASM 0x10'
+        load_inst_list2 = 'iAddi ASM ASM ' + hex(int(src) & 0xFFFF)
+        load_inst_list3 = 'lw ' + dst + ' ASM 0x00'
+
+    load_inst_list.append(load_inst_list0)
+    load_inst_list.append(load_inst_list1)
+    load_inst_list.append(load_inst_list2)
+    load_inst_list.append(load_inst_list3)
+    return '\n'.join(load_inst_list)
+    
 
 def isAllocaInst(string):
     if (len(string) > 3 and string[2] == 'alloca'):
@@ -248,6 +273,12 @@ def isStoreInst(string):
 
 def isRetInst(string):
     if (len(string) > 1 and string[0] == 'ret'):
+        return True
+    else:
+        return False
+
+def isLoadInst(string):
+    if (len(string) > 3 and string[2] == 'load'):
         return True
     else:
         return False

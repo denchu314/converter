@@ -75,12 +75,15 @@ for i, line in enumerate(replaced_line):
         
     # store
     if (isStoreInst(string)):
-    #elif (isStoreInst(string)):
         wfile.writelines(makeStoreInstList(string))
         wfile.write('\n')
     #ret
     elif (isRetInst(string)):
         wfile.writelines(makeRetInstList(string, variableTableList[0].funcName))
+        wfile.write('\n')
+    
+    elif (isLoadInst(string)):
+        wfile.writelines(makeLoadInstList(string))
         wfile.write('\n')
 
 #print(variableTableList[0].table)
