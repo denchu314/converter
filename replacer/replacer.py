@@ -15,7 +15,7 @@ const_line = rfile.readlines()
 #print(const_line)
 registerTableList = []
 variableTableList = []
-
+machine = MachineStatus();
 ###################
 # REPLACER
 ###################
@@ -43,40 +43,44 @@ for i, line in enumerate(const_line):
             if(varName[-1:]==','):
                 varName = varName[0:-1]
             
+            #first time? 
             tableIndex = variableTableList[listIndex].searchVariable(varName)
             
-            # Var has not been contained in table
-            if(tableIndex != -1):
+            # already conteined 
+            if(tableIndex is not FIRST_TIME):
                 variableTableList[listIndex].table[tableIndex][END] = i
-            # Var has already been contained in table
+            # first time in table
             else:
-                variableTableList[listIndex].addRow(varName, ATTR_TEMP, i, i, '')
+                if(isPointerInst(string)):
+                    variableTableList[listIndex].addRow(varName, ATTR_PTR_STATIC_LOCAL, i, i, '')
+                else:
+                    variableTableList[listIndex].addRow(varName, ATTR_TEMP, i, i, '')
 
         if(bracket_deep == 1 and string[j] == '}'):
             listIndex += 1
                 
 # reg is assined to variable
-assignRegister(variableTableList, ALG_NONE)
-#print(variableTableList[0].table)
+assignRegister(variableTableList, machine, ALG_NONE)
+print(variableTableList[0].table)
 #replace const line var to reg
 replaced_line = replaceVariable(const_line, variableTableList)
-#print(replaced_line)
-#print(replaced_line[0])
 # replace insts
 for i, line in enumerate(replaced_line):
 #    print(replace)
     string = line.split()
     # alloca
-    if (isAllocaInst(string)):
-        wfile.writelines(makeAllocaInstList(string[0]))
-        wfile.write('\n')
+    #if (isAllocaInst(string)):
+        #wfile.writelines(makeAllocaInstList(string[0]))
+        #wfile.write('\n')
+        
     # store
-    elif (isStoreInst(string)):
-        wfile.writelines(makeStoreInstList(string[2][0:-1], string[4][0:-1]))
+    if (isStoreInst(string)):
+    #elif (isStoreInst(string)):
+        wfile.writelines(makeStoreInstList(string))
         wfile.write('\n')
     #ret
     elif (isRetInst(string)):
-        wfile.writelines(makeRetInstList(string[2], variableTableList[0].funcName))
+        wfile.writelines(makeRetInstList(string, variableTableList[0].funcName))
         wfile.write('\n')
 
 #print(variableTableList[0].table)
