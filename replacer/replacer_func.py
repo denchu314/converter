@@ -161,19 +161,30 @@ def assignRegisterInEachTable(varTable, machine):
             machine.sp -= ADDR_PER_WORD * 1
             varTable.table[i][ASSIGNEDREG] = hex(machine.sp)
 
-def makeAllocaInstList(assignedreg0):
-    alloca_inst_list0 = 'lw ' + assignedreg0 + ' FP 0x00'
-    alloca_inst_list1 = 'iAddi ' + assignedreg0 + ' ' + assignedreg0 + ' ' + hex(ADDR_PER_WORD)
-    alloca_inst_list2 = 'sw ' + assignedreg0 + ' FP 0x00'
+def makeAllocaInstList():
+    alloca_inst_list0 = 'lw ASM FP 0x00'
+    alloca_inst_list1 = 'iAddi ASM ASM ' + hex(ADDR_PER_WORD)
+    alloca_inst_list2 = 'sw ASM FP 0x00'
     alloca_inst_list3 = 'iSubi SP SP ' + hex(ADDR_PER_WORD)
-    alloca_inst_list4 = 'iAdd ' + assignedreg0 + ' SP ZERO'
     alloca_inst_list = []
     alloca_inst_list.append(alloca_inst_list0)
     alloca_inst_list.append(alloca_inst_list1)
     alloca_inst_list.append(alloca_inst_list2)
     alloca_inst_list.append(alloca_inst_list3)
-    alloca_inst_list.append(alloca_inst_list4)
     return '\n'.join(alloca_inst_list)
+#def makeAllocaInstList(assignedreg0):
+#    alloca_inst_list0 = 'lw ' + assignedreg0 + ' FP 0x00'
+#    alloca_inst_list1 = 'iAddi ' + assignedreg0 + ' ' + assignedreg0 + ' ' + hex(ADDR_PER_WORD)
+#    alloca_inst_list2 = 'sw ' + assignedreg0 + ' FP 0x00'
+#    alloca_inst_list3 = 'iSubi SP SP ' + hex(ADDR_PER_WORD)
+#    alloca_inst_list4 = 'iAdd ' + assignedreg0 + ' SP ZERO'
+#    alloca_inst_list = []
+#    alloca_inst_list.append(alloca_inst_list0)
+#    alloca_inst_list.append(alloca_inst_list1)
+#    alloca_inst_list.append(alloca_inst_list2)
+#    alloca_inst_list.append(alloca_inst_list3)
+#    alloca_inst_list.append(alloca_inst_list4)
+#    return '\n'.join(alloca_inst_list)
 
 def makeStoreInstList(string):
     imm0 = string[2][0:-1]
@@ -222,7 +233,7 @@ def makeRetInstList(string, funcname):
     #if(ret[0:1] == 'T' or ret[0:1] == 'S'):
         ret_inst_list0  = 'iAdd R0 ZERO ' + ret
     else:
-        ret_inst_list0  = 'iAddi R0 ZERO ' + hex(int(imm0))
+        ret_inst_list0  = 'iAddi R0 ZERO ' + hex(int(ret))
 
     if (funcname == '@main()'):
         ret_inst_list1  = 'j 0x00'

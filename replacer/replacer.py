@@ -69,19 +69,18 @@ for i, line in enumerate(replaced_line):
 #    print(replace)
     string = line.split()
     # alloca
-    #if (isAllocaInst(string)):
-        #wfile.writelines(makeAllocaInstList(string[0]))
-        #wfile.write('\n')
-        
+    if (isAllocaInst(string)):
+        wfile.writelines(makeAllocaInstList())
+        wfile.write('\n')
     # store
-    if (isStoreInst(string)):
+    elif (isStoreInst(string)):
         wfile.writelines(makeStoreInstList(string))
         wfile.write('\n')
     #ret
     elif (isRetInst(string)):
         wfile.writelines(makeRetInstList(string, variableTableList[0].funcName))
         wfile.write('\n')
-    
+    #load 
     elif (isLoadInst(string)):
         wfile.writelines(makeLoadInstList(string))
         wfile.write('\n')
