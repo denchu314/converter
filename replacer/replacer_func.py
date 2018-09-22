@@ -408,7 +408,7 @@ def makeAddInstList(string):
     return '\n'.join(add_inst_list)
 
 def makeFuncInstList(string):
-    funcName = string[2][1:]
+    funcName = re.match('@[a-zA-Z_0-9]*', string[2]).group()
     func_inst_list = []
     func_inst_list.append(funcName + ':')
     return '\n'.join(func_inst_list)
@@ -537,14 +537,14 @@ def replaceVariable(const_line, variableTableList):
         string = line.split()
         for j in range(len(string)):
             if (string[j] == 'define'):
-                funcName = string[2]
+                funcName = re.match('@[a-zA-Z_0-9]*', string[2])
             if(string[j] == '{'):
                 bracket_deep+=1
             if(string[j] == '}'):
                 bracket_deep-=1
 
             #if var:
-            ptn_var = re.match('^%[a-zA-Z_0-9]', string[j])
+            ptn_var = re.match('^%[a-zA-Z_0-9]*', string[j])
             if ptn_var:
                 varName = ptn_var.group()
                 # erase "," from string

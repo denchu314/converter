@@ -28,7 +28,7 @@ for i, line in enumerate(const_line):
     listIndex = 0
     for j in range(len(string)):
         if (string[j] == 'define'):
-            funcName = string[2]
+            funcName = re.match('@[a-zA-z_0-9]*', string[2])
             registerTableList.append(RegisterTable(funcName))
             variableTableList.append(VariableTable(funcName))
         if(string[j] == '{'):
@@ -36,13 +36,10 @@ for i, line in enumerate(const_line):
         if(string[j] == '}'):
             bracket_deep-=1
         
-        ptn_var = re.match('^%[a-zA-Z_0-9]', string[j]) #variable name
+        ptn_var = re.match('^%[a-zA-Z_0-9]*', string[j]) #variable name
         # Variable is detected
         if ptn_var:
             varName = ptn_var.group()
-            # erase "," from string
-            if(varName[-1:]==','):
-                varName = varName[0:-1]
             
             #first time? 
             tableIndex = variableTableList[listIndex].searchVariable(varName)
@@ -68,7 +65,7 @@ replaced_line = replaceVariable(const_line, variableTableList)
 wfile2.writelines(replaced_line)
 # replace insts
 # asm header
-wfile.write('j main()')
+wfile.write('j @main')
 wfile.write('\n')
 wfile.write('ori 0x10')
 wfile.write('\n')
