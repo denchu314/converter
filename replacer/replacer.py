@@ -10,6 +10,7 @@ OUTPUT_FILENAME = args[1][:-1] + '1'
 
 rfile = open(args[1], 'r')
 wfile = open(OUTPUT_FILENAME, 'w')
+wfile2 = open('rep.ll', 'w')
 
 const_line = rfile.readlines()
 #print(const_line)
@@ -64,6 +65,7 @@ assignRegister(variableTableList, machine, ALG_NONE)
 print(variableTableList[0].table)
 #replace const line var to reg
 replaced_line = replaceVariable(const_line, variableTableList)
+wfile2.writelines(replaced_line)
 # replace insts
 for i, line in enumerate(replaced_line):
 #    print(replace)
@@ -84,6 +86,13 @@ for i, line in enumerate(replaced_line):
     elif (isLoadInst(string)):
         wfile.writelines(makeLoadInstList(string))
         wfile.write('\n')
-
+    #add
+    elif (isAddInst(string)):
+        wfile.writelines(makeAddInstList(string))
+        wfile.write('\n')
+    #funcDefinition
+    elif (isFuncInst(string):
+        wfile.writelines(makeFuncInstList(string))
+        wfile.wirte('\n')
 #print(variableTableList[0].table)
 #print(variableTableList[0].table[VARNAME])
