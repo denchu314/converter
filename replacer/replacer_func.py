@@ -406,6 +406,13 @@ def makeAddInstList(string):
     
     print(add_inst_list)
     return '\n'.join(add_inst_list)
+
+def makeFuncInstList(string):
+    funcName = string[2][1:]
+    func_inst_list = []
+    func_inst_list.append(funcName + ':')
+    return '\n'.join(func_inst_list)
+
     #print(src0 + ' ' + src1)
 
     #print(operand)
@@ -472,6 +479,53 @@ def isPointerInst(string):
     else:
         return False
 
+def isFuncInst(string):
+    if (len(string) > 3 and string[0] == 'define' and string[2][0] == '@'):
+        return True
+    else:
+        return False
+#
+#def replaceVariable(const_line, variableTableList):
+#    listIndex = 0
+#    tableIndex = 0
+#    funcName = ''
+#    replaced_line = []
+#    bracket_deep = 0 
+#    for i, line in enumerate(const_line):
+#        instStr = ''
+#        string = line.split()
+#        for j in range(len(string)):
+#            if (string[j] == 'define'):
+#                funcName = string[2]
+#            if(string[j] == '{'):
+#                bracket_deep+=1
+#            if(string[j] == '}'):
+#                bracket_deep-=1
+#
+#            #if (isFunc):
+#            ptn_var = re.match('^%[a-zA-Z_0-9]', string[j])
+#            if ptn_var:
+#                varName = ptn_var.group()
+#                # erase "," from string
+#                if(varName[-1:]==','):
+#                    varName = varName[0:-1]
+#                    #tableIndex = searchVariable(varName, variableTableList[listIndex].table)
+#                    tableIndex = variableTableList[listIndex].searchVariable(varName)
+#                    string[j] = variableTableList[listIndex].table[tableIndex][ASSIGNEDREG] + ','
+#                else:
+#                    # Variable is detected
+#                    #tableIndex = searchVariable(varName, variableTableList[listIndex].table)
+#                    tableIndex = variableTableList[listIndex].searchVariable(varName)
+#                    string[j] = variableTableList[listIndex].table[tableIndex][ASSIGNEDREG]
+#            if(bracket_deep == 1 and string[j] == '}'):
+#                listIndex += 1
+#
+#            instStr += string[j] + ' '
+#
+#        instStr += '\n'
+#        replaced_line.append(instStr)
+#    return replaced_line
+
 def replaceVariable(const_line, variableTableList):
     listIndex = 0
     tableIndex = 0
@@ -489,21 +543,13 @@ def replaceVariable(const_line, variableTableList):
             if(string[j] == '}'):
                 bracket_deep-=1
 
-            #if (isFunc):
-            ptn_var = re.match('^%.*', string[j])
+            #if var:
+            ptn_var = re.match('^%[a-zA-Z_0-9]', string[j])
             if ptn_var:
                 varName = ptn_var.group()
                 # erase "," from string
-                if(varName[-1:]==','):
-                    varName = varName[0:-1]
-                    #tableIndex = searchVariable(varName, variableTableList[listIndex].table)
-                    tableIndex = variableTableList[listIndex].searchVariable(varName)
-                    string[j] = variableTableList[listIndex].table[tableIndex][ASSIGNEDREG] + ','
-                else:
-                    # Variable is detected
-                    #tableIndex = searchVariable(varName, variableTableList[listIndex].table)
-                    tableIndex = variableTableList[listIndex].searchVariable(varName)
-                    string[j] = variableTableList[listIndex].table[tableIndex][ASSIGNEDREG]
+                tableIndex = variableTableList[listIndex].searchVariable(varName)
+                string[j] = string[j].replace(varName, variableTableList[listIndex].table[tableIndex][ASSIGNEDREG])
             if(bracket_deep == 1 and string[j] == '}'):
                 listIndex += 1
 
@@ -512,7 +558,6 @@ def replaceVariable(const_line, variableTableList):
         instStr += '\n'
         replaced_line.append(instStr)
     return replaced_line
-
 def searchVariable(varName, table):
     for i in range(len(table)):
         if (table[i][VARNAME] == varName):

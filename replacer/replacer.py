@@ -36,7 +36,7 @@ for i, line in enumerate(const_line):
         if(string[j] == '}'):
             bracket_deep-=1
         
-        ptn_var = re.match('^%.*', string[j])
+        ptn_var = re.match('^%[a-zA-Z_0-9]', string[j]) #variable name
         # Variable is detected
         if ptn_var:
             varName = ptn_var.group()
@@ -67,6 +67,12 @@ print(variableTableList[0].table)
 replaced_line = replaceVariable(const_line, variableTableList)
 wfile2.writelines(replaced_line)
 # replace insts
+# asm header
+wfile.write('j main()')
+wfile.write('\n')
+wfile.write('ori 0x10')
+wfile.write('\n')
+
 for i, line in enumerate(replaced_line):
 #    print(replace)
     string = line.split()
@@ -91,8 +97,8 @@ for i, line in enumerate(replaced_line):
         wfile.writelines(makeAddInstList(string))
         wfile.write('\n')
     #funcDefinition
-    elif (isFuncInst(string):
+    elif (isFuncInst(string)):
         wfile.writelines(makeFuncInstList(string))
-        wfile.wirte('\n')
+        wfile.write('\n')
 #print(variableTableList[0].table)
 #print(variableTableList[0].table[VARNAME])
