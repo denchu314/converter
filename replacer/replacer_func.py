@@ -38,6 +38,7 @@ class MachineStatus:
 class RegisterTable:
     def __init__(self, name):
         self.funcName = name
+        self.A = [True, True, True, True]
         self.S = [True, True, True, True, True, True, True, True, True]
         self.T = [True, True, True, True, True, True, True, True, True]
 
@@ -45,7 +46,7 @@ class RegisterTable:
         if regName == 'ME':
             return True
         
-        ptn = re.match('[TS][0-8]', regName)
+        ptn = re.match('A[0-3]|[TS][0-8]', regName)
         if ptn is None:
             print('Reg ' + regName + ' is not implemented.')
             return False
@@ -54,6 +55,8 @@ class RegisterTable:
                 self.S[int(regName[1])] = False
             if (regName[0] == 'T'):
                 self.T[int(regName[1])] = False
+            if (regName[0] == 'A'):
+                self.A[int(regName[1])] = False
             return True
 
     def releaseRegister(self, regName):
@@ -85,6 +88,13 @@ class RegisterTable:
             if (self.S[i] == True):
                 return 'S' + str(i)
         return 'ME'
+    
+    def searchForArgVariable(self):
+        for i in range(len(self.A)):
+            if (self.A[i] == True):
+                return 'A' + str(i)
+        print('Error! Argment need more than 4! Not impremented.')
+        exit(1)
 
 #    def assignForTempVariable(self, assignedReg):
 #        regName = self.searchForTempVariable()
@@ -164,6 +174,11 @@ def assignRegisterInEachTable(varTable, machine):
         elif(varTable.table[i][ATTR] == ATTR_PTR_STATIC_LOCAL):
             machine.sp -= ADDR_PER_WORD * 1
             varTable.table[i][ASSIGNEDREG] = hex(machine.sp)
+        
+        elif(varTable.table[i][ATTR] == ATTR_ARG):
+            regName = regTable.searchForArgVariable()
+            varTable.table[i][ASSIGNEDREG] = regName
+            regTable.setRegisterOccupy(regName)
 
 def makeAllocaInstList():
     alloca_inst_list0 = 'lw ASM FP 0x00'
@@ -404,13 +419,42 @@ def makeAddInstList(string):
         add_inst_list0 = 'iAdd ' + dst + ' ' + src0 + ' ' + src1
         add_inst_list.append(add_inst_list0)
     
-    print(add_inst_list)
+    #print(add_inst_list)
     return '\n'.join(add_inst_list)
 
+def makeCallInstList(string):
+    ret, funcName, arg = readCallInfo(string)
+    call_inst_list = []
+    if( len(arg) == 0 ):
+        call_inst_list0 = 'call ' + funcName + ' ZERO ZERO ZERO ZERO'
+    elif( len(arg) == 1 ):
+        call_inst_list0 = 'call ' + funcName + ' ' + arg[0] + ' ZERO ZERO ZERO'
+    elif( len(arg) == 2 ):
+        call_inst_list0 = 'call ' + funcName + ' ' + arg[0] + ' ' + arg[1] + ' ZERO ZERO'
+    elif( len(arg) == 3 ):
+        call_inst_list0 = 'call ' + funcName + ' ' + arg[0] + ' ' + arg[1] + ' ' + arg[2] + ' ZERO'
+    elif( len(arg) == 4 ):
+        call_inst_list0 = 'call ' + funcName + ' ' + arg[0] + ' ' + arg[1] + ' ' + arg[2] + ' ' + arg[3]
+    else:
+        print('Error! call args must be less than 4 for now! Not implemented.')
+        exit(1)
+    
+    call_inst_list1 = 'iAdd ' + ret + ' ZERO R0'
+    call_inst_list.append(call_inst_list0)
+    call_inst_list.append(call_inst_list1)
+    #print(arg)
+    return '\n'.join(call_inst_list)
+
 def makeFuncInstList(string):
-    funcName = re.match('@[a-zA-Z_0-9]*', string[2]).group()
+    #funcName = re.match('@[a-zA-Z_0-9]*', string[2]).group()
+    arg = []
+    funcName, arg = readFuncInfo(string)
     func_inst_list = []
-    func_inst_list.append(funcName + ':')
+    if(funcName == '@main'):
+        func_inst_list.append(funcName + ':')
+    else:
+        func_inst_list.append(funcName + ':')
+        func_inst_list.append('arrival')
     return '\n'.join(func_inst_list)
 
     #print(src0 + ' ' + src1)
@@ -479,11 +523,36 @@ def isPointerInst(string):
     else:
         return False
 
+def isCallInst(string):
+    if (len(string) > 3 and string[2] == 'call'):
+        return True
+    else:
+        return False
+
 def isFuncInst(string):
     if (len(string) > 3 and string[0] == 'define' and string[2][0] == '@'):
         return True
     else:
         return False
+
+def readCallInfo(string):
+    funcName = re.match('@[a-zA-Z_0-9]*', string[4]).group()
+    arg = []
+    for i in range(5, len(string), 2):
+        arg.append(re.match('[a-zA-Z_0-9]*', string[i]).group())
+    retval = string[0]
+    return retval, funcName, arg
+
+def readFuncInfo(string):
+    funcName = re.match('@[a-zA-Z_0-9]*', string[2]).group()
+    arg = []
+    for i in range(3, len(string), 2):
+        #if(re.match('i32', string[i])):
+        ptr_arg = re.match('[a-zA-Z_0-9%]+', string[i])
+        if ptr_arg:
+            arg.append(ptr_arg.group())
+    return funcName, arg
+
 #
 #def replaceVariable(const_line, variableTableList):
 #    listIndex = 0
@@ -542,6 +611,8 @@ def replaceVariable(const_line, variableTableList):
                 bracket_deep+=1
             if(string[j] == '}'):
                 bracket_deep-=1
+                if(bracket_deep == 0):
+                    listIndex += 1
 
             #if var:
             ptn_var = re.match('^%[a-zA-Z_0-9]*', string[j])
@@ -550,14 +621,13 @@ def replaceVariable(const_line, variableTableList):
                 # erase "," from string
                 tableIndex = variableTableList[listIndex].searchVariable(varName)
                 string[j] = string[j].replace(varName, variableTableList[listIndex].table[tableIndex][ASSIGNEDREG])
-            if(bracket_deep == 1 and string[j] == '}'):
-                listIndex += 1
 
             instStr += string[j] + ' '
 
         instStr += '\n'
         replaced_line.append(instStr)
     return replaced_line
+
 def searchVariable(varName, table):
     for i in range(len(table)):
         if (table[i][VARNAME] == varName):
@@ -581,7 +651,7 @@ def isDec(val):
         return False
 
 def isRegisterName(string):
-    print(string)
+    #print(string)
     for i in range(len(registers)):
         if(registers[i] == string):
             return True
