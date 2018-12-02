@@ -12,6 +12,8 @@ rfile = open(args[1], 'r')
 wfile = open(OUTPUT_FILENAME, 'w')
 wfile2 = open('rep.ll', 'w')
 
+diff_from_fp = Stack()
+
 const_line = rfile.readlines()
 #print(const_line)
 registerTableList = []
@@ -26,6 +28,7 @@ listIndex = 0
 for i, line in enumerate(const_line):
      
     string = line.split()
+    # new func detected
     if (isFuncInst(string)):
         funcName, varName = readFuncInfo(string)
         registerTableList.append(RegisterTable(funcName))
@@ -40,7 +43,9 @@ for i, line in enumerate(const_line):
         if(string[j] == '}'):
             bracket_deep-=1
             if(bracket_deep == 0):
+                #function{} finish
                 listIndex += 1
+                diff_from_fp.next()
         
         ptn_var = re.match('^%[a-zA-Z_0-9]*', string[j]) #variable name
         # Variable is detected
@@ -60,17 +65,25 @@ for i, line in enumerate(const_line):
             # first time in table
             else:
                 if(isPointerInst(string)):
-                    variableTableList[listIndex].addRow(varName, ATTR_PTR_STATIC_LOCAL, i, i, '')
+                    print(varName + ' ' + str(diff_from_fp.peek()))
+                    variableTableList[listIndex].addRow(varName, ATTR_PTR_STATIC_LOCAL, i, i, 'FP-' + str(diff_from_fp.peek()))
+                    diff_from_fp.update(diff_from_fp.peek() + ADDR_PER_WORD)
                 else:
                     variableTableList[listIndex].addRow(varName, ATTR_TEMP, i, i, '')
 
                 
 # reg is assined to variable
+#print(variableTableList[0].funcName)
+#print(variableTableList[0].table)
+#print(variableTableList[1].funcName)
+#print(variableTableList[1].table)
 assignRegister(variableTableList, machine, ALG_NONE)
-print(variableTableList[0].funcName)
-print(variableTableList[0].table)
-print(variableTableList[1].funcName)
-print(variableTableList[1].table)
+#print(variableTableList[0].funcName)
+#print(variableTableList[0].table)
+#print(variableTableList[1].funcName)
+#print(variableTableList[1].table)
+#print(variableTableList[1].funcName)
+#print(variableTableList[1].table)
 #replace const line var to reg
 replaced_line = replaceVariable(const_line, variableTableList)
 wfile2.writelines(replaced_line)

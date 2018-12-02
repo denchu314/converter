@@ -31,8 +31,38 @@ tempRegisters = registers[0x12:0x1a]
 #    self.funcName = funcName
 #    self.start = 0
 #    self.end = 0
+
+
+
+class Stack:
+    def __init__(self):
+        self.ptr = 0
+        self.items = []
+        self.items.append(0)
+    def empty(self):
+        return self.items == []
+                                        
+    def update(self, val):
+        self.items[self.ptr] = val
+
+    def peek(self):
+        #print(self.ptr)
+        return self.items[self.ptr]
+                              
+    def size(self):
+        return len(self.items)
+    
+    def next(self):
+        self.ptr = self.ptr + 1
+        self.items.append(0)
+    
+    def before(self):
+        self.items[self.ptr] = 0
+        self.ptr = self.ptr - 1
+
 class MachineStatus:
     def __init__(self):
+        self.sp = INIT_SP_ADDR
         self.sp = INIT_SP_ADDR
 
 class RegisterTable:
@@ -129,28 +159,6 @@ class VariableTable:
                 return i
         
         return FIRST_TIME
-#class RegisterAssignmentTableList:
-#    def __init__(self):
-#        self = []
-#    def add(self, funcName):
-#        self.append(RegisterAssignmentTable(funcName))
-
-    #def searchVal
-#def assignRegister(variableTableList, machine, ALGORITHM):
-#
-#    for i in range(len(variableTableList)):
-#        funcName = variableTableList[i].funcName
-#        registerTable = RegisterTable(funcName)
-#        
-#        for j in range(len(variableTableList[i].table)):
-#            if(variableTableList[i].table[j][ATTR] == ATTR_SAVE):
-#                assignedreg = registerTable.searchForSaveVariable()
-#
-#            elif(variableTableList[i].table[j][ATTR] == ATTR_TEMP):
-#                assignedreg = registerTable.searchForTempVariable()
-#            
-#            variableTableList[i].table[j][ASSIGNEDREG] = assignedreg
-#            registerTable.getRegister(assignedreg)
 
 def assignRegister(variableTableList, machine, ALGORITHM):
 
@@ -171,10 +179,6 @@ def assignRegisterInEachTable(varTable, machine):
             varTable.table[i][ASSIGNEDREG] = regName
             regTable.setRegisterOccupy(regName)
         
-        elif(varTable.table[i][ATTR] == ATTR_PTR_STATIC_LOCAL):
-            machine.sp -= ADDR_PER_WORD * 1
-            varTable.table[i][ASSIGNEDREG] = hex(machine.sp)
-        
         elif(varTable.table[i][ATTR] == ATTR_ARG):
             regName = regTable.searchForArgVariable()
             varTable.table[i][ASSIGNEDREG] = regName
@@ -191,57 +195,7 @@ def makeAllocaInstList():
     alloca_inst_list.append(alloca_inst_list2)
     alloca_inst_list.append(alloca_inst_list3)
     return '\n'.join(alloca_inst_list)
-#def makeAllocaInstList(assignedreg0):
-#    alloca_inst_list0 = 'lw ' + assignedreg0 + ' FP 0x00'
-#    alloca_inst_list1 = 'iAddi ' + assignedreg0 + ' ' + assignedreg0 + ' ' + hex(ADDR_PER_WORD)
-#    alloca_inst_list2 = 'sw ' + assignedreg0 + ' FP 0x00'
-#    alloca_inst_list3 = 'iSubi SP SP ' + hex(ADDR_PER_WORD)
-#    alloca_inst_list4 = 'iAdd ' + assignedreg0 + ' SP ZERO'
-#    alloca_inst_list = []
-#    alloca_inst_list.append(alloca_inst_list0)
-#    alloca_inst_list.append(alloca_inst_list1)
-#    alloca_inst_list.append(alloca_inst_list2)
-#    alloca_inst_list.append(alloca_inst_list3)
-#    alloca_inst_list.append(alloca_inst_list4)
-#    return '\n'.join(alloca_inst_list)
 
-#def makeStoreInstList(string):
-#    src0 = string[2][0:-1]
-#    dst = string[4][0:-1]
-#    
-#    store_inst_list = []
-#    
-#    #pointer?
-#    if(string[3][-1:] == '*'):
-#        store_inst_list0 = 'iAddi ASM ZERO ' + hex(int(src0) >> 16)
-#        store_inst_list1 = 'Lsfti ASM ASM 0x10'
-#        store_inst_list2 = 'iAddi ASM ASM ' + hex(int(src0) & 0xFFFF)
-#        #hex value?
-#        if(dst[0:2] == '0x'):
-#            store_inst_list3 = 'iAddi R1 ZERO ' + hex(int(dst, 16) >> 16)
-#            store_inst_list4 = 'Lsfti R1 R1 0x10'
-#            store_inst_list5 = 'iAddi R1 R1 ' + hex(int(dst, 16) & 0xFFFF)
-#            store_inst_list6 = 'sw ASM R1 0x00'
-#        else:
-#            store_inst_list3 = 'iAddi R1 ZERO ' + hex(int(dst) >> 16)
-#            store_inst_list4 = 'Lsfti R1 R1 0x10'
-#            store_inst_list5 = 'iAddi R1 R1 ' + hex(int(dst) & 0xFFFF)
-#            store_inst_list6 = 'sw ASM R1 0x00'
-#
-#        store_inst_list.append(store_inst_list0)
-#        store_inst_list.append(store_inst_list1)
-#        store_inst_list.append(store_inst_list2)
-#        store_inst_list.append(store_inst_list3)
-#        store_inst_list.append(store_inst_list4)
-#        store_inst_list.append(store_inst_list5)
-#        store_inst_list.append(store_inst_list6)
-#    else:
-#
-#        store_inst_list0 = 'iAdd ASM ZERO ' + hex(int(imm0) >> 16)
-#        store_inst_list1 = 'sw ASM ' + dst + ' 0x00'
-#        store_inst_list.append(store_inst_list0)
-#        store_inst_list.append(store_inst_list1)
-#    return '\n'.join(store_inst_list)
 def makeStoreInstList(string):
     src0 = string[2][0:-1]
     dst = string[4][0:-1]
@@ -252,10 +206,6 @@ def makeStoreInstList(string):
         store_inst_list = makeStoreListValRegAddrImm(src0, dst)
     else:
         store_inst_list = makeStoreListValImmAddrImm(src0, dst)
-    #pointer?
-    #if(string[3][-1:] == '*'):
-        #hex value?
-    #else:
     return  store_inst_list
 
 def makeStoreListValImmAddrImm(valImm, addrImm):
@@ -263,16 +213,22 @@ def makeStoreListValImmAddrImm(valImm, addrImm):
     store_inst_list0 = 'iAddi ASM ZERO ' + hex(int(valImm) >> 16)
     store_inst_list1 = 'Lsfti ASM ASM 0x10'
     store_inst_list2 = 'iAddi ASM ASM ' + hex(int(valImm) & 0xFFFF)
-    if(isHex(addrImm)):
+    if(isFPDiff(addrImm)):
+        diffaddr = int(addrImm[3:])
+        store_inst_list3 = 'iAddi R1 ZERO ' + hex(diffaddr >> 16)
+        store_inst_list4 = 'Lsfti R1 R1 0x10'
+        store_inst_list5 = 'iAddi R1 R1 ' + hex(diffaddr & 0xFFFF)
+    elif(isHex(addrImm)):
         store_inst_list3 = 'iAddi R1 ZERO ' + hex(int(addrImm, 16) >> 16)
         store_inst_list4 = 'Lsfti R1 R1 0x10'
         store_inst_list5 = 'iAddi R1 R1 ' + hex(int(addrImm, 16) & 0xFFFF)
-        store_inst_list6 = 'sw ASM R1 0x00'
     else:
         store_inst_list3 = 'iAddi R1 ZERO ' + hex(int(addrImm) >> 16)
         store_inst_list4 = 'Lsfti R1 R1 0x10'
         store_inst_list5 = 'iAddi R1 R1 ' + hex(int(addrImm) & 0xFFFF)
-        store_inst_list6 = 'sw ASM R1 0x00'
+    
+    store_inst_list6 = 'iSub R1 FP R1'
+    store_inst_list7 = 'sw ASM R1 0x00'
 
     store_inst_list.append(store_inst_list0)
     store_inst_list.append(store_inst_list1)
@@ -281,24 +237,33 @@ def makeStoreListValImmAddrImm(valImm, addrImm):
     store_inst_list.append(store_inst_list4)
     store_inst_list.append(store_inst_list5)
     store_inst_list.append(store_inst_list6)
+    store_inst_list.append(store_inst_list7)
     return '\n'.join(store_inst_list)
     
 def makeStoreListValRegAddrImm(valReg, addrImm):
     store_inst_list = []
-    if(isHex(addrImm)):
+    if(isFPDiff(addrImm)):
+        diffaddr = int(addrImm[3:])
+        store_inst_list0 = 'iAddi R1 ZERO ' + hex(diffaddr >> 16)
+        store_inst_list1 = 'Lsfti R1 R1 0x10'
+        store_inst_list2 = 'iAddi R1 R1 ' + hex(diffaddr & 0xFFFF)
+        store_inst_list3 = 'iSub R1 FP R1'
+    elif(isHex(addrImm)):
         store_inst_list0 = 'iAddi R1 ZERO ' + hex(int(addrImm, 16) >> 16)
         store_inst_list1 = 'Lsfti R1 R1 0x10'
         store_inst_list2 = 'iAddi R1 R1 ' + hex(int(addrImm, 16) & 0xFFFF)
-        store_inst_list3 = 'sw ' + valReg + ' R1 0x00'
     else:
         store_inst_list0 = 'iAddi R1 ZERO ' + hex(int(addrImm) >> 16)
         store_inst_list1 = 'Lsfti R1 R1 0x10'
         store_inst_list2 = 'iAddi R1 R1 ' + hex(int(addrImm) & 0xFFFF)
-        store_inst_list3 = 'sw ' + valReg + ' R1 0x00'
+    store_inst_list4 = 'sw ' + valReg + ' R1 0x00'
+    
     store_inst_list.append(store_inst_list0)
     store_inst_list.append(store_inst_list1)
     store_inst_list.append(store_inst_list2)
-    store_inst_list.append(store_inst_list3)
+    if(isFPDiff(addrImm)):
+        store_inst_list.append(store_inst_list3)
+    store_inst_list.append(store_inst_list4)
     return '\n'.join(store_inst_list)
     
 
@@ -332,21 +297,28 @@ def makeLoadInstList(string):
     #pointer?
     #if(string[5][-1:] == '*'):
     #hex value?
-    if(src[0:2] == '0x'):
+    if(isFPDiff(src)):
+        diffaddr = int(src[3:])
+        load_inst_list0 = 'iAddi ASM ZERO ' + hex(diffaddr >> 16)
+        load_inst_list1 = 'Lsfti ASM ASM 0x10'
+        load_inst_list2 = 'iAddi ASM ASM ' + hex(diffaddr & 0xFFFF)
+        load_inst_list3 = 'iSub ASM FP ASM'
+    elif(src[0:2] == '0x'):
         load_inst_list0 = 'iAddi ASM ZERO ' + hex(int(src, 16) >> 16)
         load_inst_list1 = 'Lsfti ASM ASM 0x10'
         load_inst_list2 = 'iAddi ASM ASM ' + hex(int(src, 16) & 0xFFFF)
-        load_inst_list3 = 'lw ' + dst + ' ASM 0x00'
     else:
         load_inst_list0 = 'iAddi ASM ZERO ' + hex(int(src) >> 16)
         load_inst_list1 = 'Lsfti ASM ASM 0x10'
         load_inst_list2 = 'iAddi ASM ASM ' + hex(int(src) & 0xFFFF)
-        load_inst_list3 = 'lw ' + dst + ' ASM 0x00'
+    load_inst_list4 = 'lw ' + dst + ' ASM 0x00'
 
     load_inst_list.append(load_inst_list0)
     load_inst_list.append(load_inst_list1)
     load_inst_list.append(load_inst_list2)
-    load_inst_list.append(load_inst_list3)
+    if(isFPDiff(src)):
+        load_inst_list.append(load_inst_list3)
+    load_inst_list.append(load_inst_list4)
     return '\n'.join(load_inst_list)
     
 def makeAddInstList(string):
@@ -375,7 +347,7 @@ def makeAddInstList(string):
         add_inst_list0 = 'iAddi ASM ZERO ' + hex(int(src1, 16) >> 16)
         add_inst_list1 = 'Lsfti ASM ASM 0x10'
         add_inst_list2 = 'iAddi ASM ASM ' + hex(int(src1, 16) & 0xFFFF)
-        add_inst_list3 = 'iAdd ' + dst + ' ' + src0 + 'ASM' 
+        add_inst_list3 = 'iAdd ' + dst + ' ' + src0 + ' ASM' 
         add_inst_list.append(add_inst_list0)
         add_inst_list.append(add_inst_list1)
         add_inst_list.append(add_inst_list2)
@@ -386,7 +358,7 @@ def makeAddInstList(string):
         add_inst_list0 = 'iAddi ASM ZERO ' + hex(int(src1, 16) >> 16)
         add_inst_list1 = 'Lsfti ASM ASM 0x10'
         add_inst_list2 = 'iAddi ASM ASM ' + hex(int(src1, 16) & 0xFFFF)
-        add_inst_list3 = 'iAdd ' + dst + ' ' + src0 + 'ASM' 
+        add_inst_list3 = 'iAdd ' + dst + ' ' + src0 + ' ASM' 
         add_inst_list.append(add_inst_list0)
         add_inst_list.append(add_inst_list1)
         add_inst_list.append(add_inst_list2)
@@ -397,7 +369,7 @@ def makeAddInstList(string):
         add_inst_list0 = 'iAddi ASM ZERO ' + hex(int(src1, 16) >> 16)
         add_inst_list1 = 'Lsfti ASM ASM 0x10'
         add_inst_list2 = 'iAddi ASM ASM ' + hex(int(src1, 16) & 0xFFFF)
-        add_inst_list3 = 'iAdd ' + dst + ' ' + src0 + 'ASM' 
+        add_inst_list3 = 'iAdd ' + dst + ' ' + src0 + ' ASM' 
         add_inst_list.append(add_inst_list0)
         add_inst_list.append(add_inst_list1)
         add_inst_list.append(add_inst_list2)
@@ -408,7 +380,7 @@ def makeAddInstList(string):
         add_inst_list0 = 'iAddi ASM ZERO ' + hex(int(src1, 16) >> 16)
         add_inst_list1 = 'Lsfti ASM ASM 0x10'
         add_inst_list2 = 'iAddi ASM ASM ' + hex(int(src1, 16) & 0xFFFF)
-        add_inst_list3 = 'iAdd ' + dst + ' ' + src0 + 'ASM' 
+        add_inst_list3 = 'iAdd ' + dst + ' ' + src0 + ' ASM' 
         add_inst_list.append(add_inst_list0)
         add_inst_list.append(add_inst_list1)
         add_inst_list.append(add_inst_list2)
@@ -457,30 +429,6 @@ def makeFuncInstList(string):
         func_inst_list.append('arrival')
     return '\n'.join(func_inst_list)
 
-    #print(src0 + ' ' + src1)
-
-    #print(operand)
-
-    #load_inst_list = []
-    ##pointer?
-    ##if(string[5][-1:] == '*'):
-    ##hex value?
-    #if(src[0:2] == '0x'):
-    #    load_inst_list0 = 'iAddi ASM ZERO ' + hex(int(src, 16) >> 16)
-    #    load_inst_list1 = 'Lsfti ASM ASM 0x10'
-    #    load_inst_list2 = 'iAddi ASM ASM ' + hex(int(src, 16) & 0xFFFF)
-    #    load_inst_list3 = 'lw ' + dst + ' ASM 0x00'
-    #else:
-    #    load_inst_list0 = 'iAddi ASM ZERO ' + hex(int(src) >> 16)
-    #    load_inst_list1 = 'Lsfti ASM ASM 0x10'
-    #    load_inst_list2 = 'iAddi ASM ASM ' + hex(int(src) & 0xFFFF)
-    #    load_inst_list3 = 'lw ' + dst + ' ASM 0x00'
-
-    #load_inst_list.append(load_inst_list0)
-    #load_inst_list.append(load_inst_list1)
-    #load_inst_list.append(load_inst_list2)
-    #load_inst_list.append(load_inst_list3)
-    #return '\n'.join(load_inst_list)
 def isImm(string):
     if(isHex(string) or isDec(string)):
         return True
@@ -553,47 +501,6 @@ def readFuncInfo(string):
             arg.append(ptr_arg.group())
     return funcName, arg
 
-#
-#def replaceVariable(const_line, variableTableList):
-#    listIndex = 0
-#    tableIndex = 0
-#    funcName = ''
-#    replaced_line = []
-#    bracket_deep = 0 
-#    for i, line in enumerate(const_line):
-#        instStr = ''
-#        string = line.split()
-#        for j in range(len(string)):
-#            if (string[j] == 'define'):
-#                funcName = string[2]
-#            if(string[j] == '{'):
-#                bracket_deep+=1
-#            if(string[j] == '}'):
-#                bracket_deep-=1
-#
-#            #if (isFunc):
-#            ptn_var = re.match('^%[a-zA-Z_0-9]', string[j])
-#            if ptn_var:
-#                varName = ptn_var.group()
-#                # erase "," from string
-#                if(varName[-1:]==','):
-#                    varName = varName[0:-1]
-#                    #tableIndex = searchVariable(varName, variableTableList[listIndex].table)
-#                    tableIndex = variableTableList[listIndex].searchVariable(varName)
-#                    string[j] = variableTableList[listIndex].table[tableIndex][ASSIGNEDREG] + ','
-#                else:
-#                    # Variable is detected
-#                    #tableIndex = searchVariable(varName, variableTableList[listIndex].table)
-#                    tableIndex = variableTableList[listIndex].searchVariable(varName)
-#                    string[j] = variableTableList[listIndex].table[tableIndex][ASSIGNEDREG]
-#            if(bracket_deep == 1 and string[j] == '}'):
-#                listIndex += 1
-#
-#            instStr += string[j] + ' '
-#
-#        instStr += '\n'
-#        replaced_line.append(instStr)
-#    return replaced_line
 
 def replaceVariable(const_line, variableTableList):
     listIndex = 0
@@ -648,6 +555,12 @@ def isDec(val):
         int(val)
         return True
     except:
+        return False
+
+def isFPDiff(val):
+    if(val[0:2] == 'FP'):
+        return True
+    else:
         return False
 
 def isRegisterName(string):
