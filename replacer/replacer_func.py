@@ -429,6 +429,205 @@ def makeFuncInstList(string):
         func_inst_list.append('arrival')
     return '\n'.join(func_inst_list)
 
+def makeIcmpInstList(string):
+    
+    icmp_inst_list = [] 
+
+    a = string[5]
+    b = string[6]
+    c = string[0]
+    a = a.replace(',',' ')
+    b = b.replace(',',' ')
+    c = c.replace(',',' ')
+    cond = string[3]
+
+    flag_src0_is_imm = 0
+    flag_src1_is_imm = 0
+    flag_unsigned_cond = 0
+
+    if(isImm(a)):
+        flag_src0_is_imm = 1
+    if(isImm(b)):
+        flag_src1_is_imm = 1
+    if(cond == "ugt" or cond == "uge" or cond == "ult" or cond == "ule"):
+        flag_unsigned_cond = 1
+
+    if(flag_src1_is_imm == 1):
+        icmp_inst_preprocess_line0 = 'iAddi R1 ZERO ' + hex((int(b) & 0xFFFF0000) >> 0x10)
+        icmp_inst_preprocess_line1 = 'Lsfti R1 R1 0x10'
+        icmp_inst_preprocess_line2 = 'iAddi R1 R1 ' + hex((int(b) & 0x0000FFFF))
+        icmp_inst_list.append(icmp_inst_preprocess_line0)
+        icmp_inst_list.append(icmp_inst_preprocess_line1)
+        icmp_inst_list.append(icmp_inst_preprocess_line2)
+    if(flag_src0_is_imm == 1):
+        icmp_inst_preprocess_line0 = 'iAddi R1 ZERO ' + hex((int(a) & 0xFFFF0000) >> 0x10)
+        icmp_inst_preprocess_line1 = 'Lsfti R1 R1 0x10'
+        icmp_inst_preprocess_line2 = 'iAddi R1 R1 ' + hex((int(a) & 0x0000FFFF))
+        icmp_inst_list.append(icmp_inst_preprocess_line0)
+        icmp_inst_list.append(icmp_inst_preprocess_line1)
+        icmp_inst_list.append(icmp_inst_preprocess_line2)
+    
+    if(flag_unsigned_cond == 0 and flag_src0_is_imm == 0 and flag_src1_is_imm == 0):
+        icmp_inst_judgeflow_line0 = 'iAdd ASM ZERO ZERO'
+        icmp_inst_judgeflow_line1 = 'cmp ' + c + ' ' + a + ' ' + b
+        icmp_inst_judgeflow_line2 = 'be ' + c + ' ZERO ' + hex(ADDR_PER_WORD)
+        icmp_inst_judgeflow_line3 = 'iAddi ASM ASM 0x1'
+        icmp_inst_judgeflow_line4 = 'cmp ' + c + ' ' + b + ' ' + a
+        icmp_inst_judgeflow_line5 = 'be ' + c + ' ZERO ' + hex(ADDR_PER_WORD)
+        icmp_inst_judgeflow_line6 = 'iAddi ASM ASM 0x2'
+        icmp_inst_list.append(icmp_inst_judgeflow_line0)
+        icmp_inst_list.append(icmp_inst_judgeflow_line1)
+        icmp_inst_list.append(icmp_inst_judgeflow_line2)
+        icmp_inst_list.append(icmp_inst_judgeflow_line3)
+        icmp_inst_list.append(icmp_inst_judgeflow_line4)
+        icmp_inst_list.append(icmp_inst_judgeflow_line5)
+        icmp_inst_list.append(icmp_inst_judgeflow_line6)
+    if(flag_unsigned_cond == 0 and flag_src0_is_imm == 0 and flag_src1_is_imm == 1):
+        icmp_inst_judgeflow_line0 = 'iAdd ASM ZERO ZERO'
+        icmp_inst_judgeflow_line1 = 'cmp ' + c + ' ' + a + ' R1'
+        icmp_inst_judgeflow_line2 = 'be ' + c + ' ZERO ' + hex(ADDR_PER_WORD)
+        icmp_inst_judgeflow_line3 = 'iAddi ASM ASM 0x1'
+        icmp_inst_judgeflow_line4 = 'cmp ' + c + ' R1 ' + a
+        icmp_inst_judgeflow_line5 = 'be ' + c + ' ZERO ' + hex(ADDR_PER_WORD)
+        icmp_inst_judgeflow_line6 = 'iAddi ASM ASM 0x2'
+        icmp_inst_list.append(icmp_inst_judgeflow_line0)
+        icmp_inst_list.append(icmp_inst_judgeflow_line1)
+        icmp_inst_list.append(icmp_inst_judgeflow_line2)
+        icmp_inst_list.append(icmp_inst_judgeflow_line3)
+        icmp_inst_list.append(icmp_inst_judgeflow_line4)
+        icmp_inst_list.append(icmp_inst_judgeflow_line5)
+        icmp_inst_list.append(icmp_inst_judgeflow_line6)
+    if(flag_unsigned_cond == 0 and flag_src0_is_imm == 1 and flag_src1_is_imm == 0):
+        icmp_inst_judgeflow_line0 = 'iAdd ASM ZERO ZERO'
+        icmp_inst_judgeflow_line1 = 'cmp ' + c + ' R1 ' + b
+        icmp_inst_judgeflow_line2 = 'be ' + c + ' ZERO ' + hex(ADDR_PER_WORD)
+        icmp_inst_judgeflow_line3 = 'iAddi ASM ASM 0x1'
+        icmp_inst_judgeflow_line4 = 'cmp ' + c + ' ' + b + ' R1'
+        icmp_inst_judgeflow_line5 = 'be ' + c + ' ZERO ' + hex(ADDR_PER_WORD)
+        icmp_inst_judgeflow_line6 = 'iAddi ASM ASM 0x2'
+        icmp_inst_list.append(icmp_inst_judgeflow_line0)
+        icmp_inst_list.append(icmp_inst_judgeflow_line1)
+        icmp_inst_list.append(icmp_inst_judgeflow_line2)
+        icmp_inst_list.append(icmp_inst_judgeflow_line3)
+        icmp_inst_list.append(icmp_inst_judgeflow_line4)
+        icmp_inst_list.append(icmp_inst_judgeflow_line5)
+        icmp_inst_list.append(icmp_inst_judgeflow_line6)
+    if(flag_unsigned_cond == 1 and flag_src0_is_imm == 0 and flag_src1_is_imm == 0):
+        icmp_inst_judgeflow_line0 = 'iAdd ASM ZERO ZERO'
+        icmp_inst_judgeflow_line1 = 'ucmp ' + c + ' ' + a + ' ' + b
+        icmp_inst_judgeflow_line2 = 'be ' + c + ' ZERO ' + hex(ADDR_PER_WORD)
+        icmp_inst_judgeflow_line3 = 'iAddi ASM ASM 0x1'
+        icmp_inst_judgeflow_line4 = 'ucmp ' + c + ' ' + b + ' ' + a
+        icmp_inst_judgeflow_line5 = 'be ' + c + ' ZERO ' + hex(ADDR_PER_WORD)
+        icmp_inst_judgeflow_line6 = 'iAddi ASM ASM 0x2'
+        icmp_inst_list.append(icmp_inst_judgeflow_line0)
+        icmp_inst_list.append(icmp_inst_judgeflow_line1)
+        icmp_inst_list.append(icmp_inst_judgeflow_line2)
+        icmp_inst_list.append(icmp_inst_judgeflow_line3)
+        icmp_inst_list.append(icmp_inst_judgeflow_line4)
+        icmp_inst_list.append(icmp_inst_judgeflow_line5)
+        icmp_inst_list.append(icmp_inst_judgeflow_line6)
+    if(flag_unsigned_cond == 1 and flag_src0_is_imm == 0 and flag_src1_is_imm == 1):
+        icmp_inst_judgeflow_line0 = 'iAdd ASM ZERO ZERO'
+        icmp_inst_judgeflow_line1 = 'ucmp ' + c + ' ' + a + ' R1'
+        icmp_inst_judgeflow_line2 = 'be ' + c + ' ZERO ' + hex(ADDR_PER_WORD)
+        icmp_inst_judgeflow_line3 = 'iAddi ASM ASM 0x1'
+        icmp_inst_judgeflow_line4 = 'ucmp ' + c + ' R1 ' + a
+        icmp_inst_judgeflow_line5 = 'be ' + c + ' ZERO ' + hex(ADDR_PER_WORD)
+        icmp_inst_judgeflow_line6 = 'iAddi ASM ASM 0x2'
+        icmp_inst_list.append(icmp_inst_judgeflow_line0)
+        icmp_inst_list.append(icmp_inst_judgeflow_line1)
+        icmp_inst_list.append(icmp_inst_judgeflow_line2)
+        icmp_inst_list.append(icmp_inst_judgeflow_line3)
+        icmp_inst_list.append(icmp_inst_judgeflow_line4)
+        icmp_inst_list.append(icmp_inst_judgeflow_line5)
+        icmp_inst_list.append(icmp_inst_judgeflow_line6)
+    if(flag_unsigned_cond == 1 and flag_src0_is_imm == 1 and flag_src1_is_imm == 0):
+        icmp_inst_judgeflow_line0 = 'iAdd ASM ZERO ZERO'
+        icmp_inst_judgeflow_line1 = 'ucmp ' + c + ' R1 ' + b
+        icmp_inst_judgeflow_line2 = 'be ' + c + ' ZERO ' + hex(ADDR_PER_WORD)
+        icmp_inst_judgeflow_line3 = 'iAddi ASM ASM 0x1'
+        icmp_inst_judgeflow_line4 = 'ucmp ' + c + ' ' + b + ' R1'
+        icmp_inst_judgeflow_line5 = 'be ' + c + ' ZERO ' + hex(ADDR_PER_WORD)
+        icmp_inst_judgeflow_line6 = 'iAddi ASM ASM 0x2'
+        icmp_inst_list.append(icmp_inst_judgeflow_line0)
+        icmp_inst_list.append(icmp_inst_judgeflow_line1)
+        icmp_inst_list.append(icmp_inst_judgeflow_line2)
+        icmp_inst_list.append(icmp_inst_judgeflow_line3)
+        icmp_inst_list.append(icmp_inst_judgeflow_line4)
+        icmp_inst_list.append(icmp_inst_judgeflow_line5)
+        icmp_inst_list.append(icmp_inst_judgeflow_line6)
+
+    if(cond == 'eq'):
+        icmp_inst_judge_line0 = 'iAddi ' + c + ' ZERO 0x0'
+        icmp_inst_judge_line1 = 'bne ASM ' + c + ' ' + hex(2 * ADDR_PER_WORD)
+        icmp_inst_judge_line2 = 'iAddi ' + c + ' ZERO 0x1'
+        icmp_inst_judge_line3 = 'be ZERO ZERO ' + hex(ADDR_PER_WORD)
+        icmp_inst_judge_line4 = 'iAddi ' + c + ' ZERO 0x0'
+        icmp_inst_list.append(icmp_inst_judge_line0)
+        icmp_inst_list.append(icmp_inst_judge_line1)
+        icmp_inst_list.append(icmp_inst_judge_line2)
+        icmp_inst_list.append(icmp_inst_judge_line3)
+        icmp_inst_list.append(icmp_inst_judge_line4)
+    elif(cond == 'ne'):
+        icmp_inst_judge_line0 = 'iAddi ' + c + ' ZERO 0x0'
+        icmp_inst_judge_line1 = 'be ASM ' + c + ' ' + hex(2 * ADDR_PER_WORD)
+        icmp_inst_judge_line2 = 'iAddi ' + c + ' ZERO 0x1'
+        icmp_inst_judge_line3 = 'be ZERO ZERO ' + hex(ADDR_PER_WORD)
+        icmp_inst_judge_line4 = 'iAddi ' + c + ' ZERO 0x0'
+        icmp_inst_list.append(icmp_inst_judge_line0)
+        icmp_inst_list.append(icmp_inst_judge_line1)
+        icmp_inst_list.append(icmp_inst_judge_line2)
+        icmp_inst_list.append(icmp_inst_judge_line3)
+        icmp_inst_list.append(icmp_inst_judge_line4)
+    elif(cond == 'ugt' or cond == 'sgt'):
+        icmp_inst_judge_line0 = 'iAddi ' + c + ' ZERO 0x1'
+        icmp_inst_judge_line1 = 'bne ASM ' + c + ' ' + hex(2 * ADDR_PER_WORD)
+        icmp_inst_judge_line2 = 'iAddi ' + c + ' ZERO 0x1'
+        icmp_inst_judge_line3 = 'be ZERO ZERO ' + hex(ADDR_PER_WORD)
+        icmp_inst_judge_line4 = 'iAddi ' + c + ' ZERO 0x0'
+        icmp_inst_list.append(icmp_inst_judge_line0)
+        icmp_inst_list.append(icmp_inst_judge_line1)
+        icmp_inst_list.append(icmp_inst_judge_line2)
+        icmp_inst_list.append(icmp_inst_judge_line3)
+        icmp_inst_list.append(icmp_inst_judge_line4)
+    elif(cond == 'uge' or cond == 'sge'):
+        icmp_inst_judge_line0 = 'iAddi ' + c + ' ZERO 0x2'
+        icmp_inst_judge_line1 = 'be ASM ' + c + ' ' + hex(2 * ADDR_PER_WORD)
+        icmp_inst_judge_line2 = 'iAddi ' + c + ' ZERO 0x1'
+        icmp_inst_judge_line3 = 'be ZERO ZERO ' + hex(ADDR_PER_WORD)
+        icmp_inst_judge_line4 = 'iAddi ' + c + ' ZERO 0x0'
+        icmp_inst_list.append(icmp_inst_judge_line0)
+        icmp_inst_list.append(icmp_inst_judge_line1)
+        icmp_inst_list.append(icmp_inst_judge_line2)
+        icmp_inst_list.append(icmp_inst_judge_line3)
+        icmp_inst_list.append(icmp_inst_judge_line4)
+    elif(cond == 'ult' or cond == 'slt'):
+        icmp_inst_judge_line0 = 'iAddi ' + c + ' ZERO 0x2'
+        icmp_inst_judge_line1 = 'bne ASM ' + c + ' ' + hex(2 * ADDR_PER_WORD)
+        icmp_inst_judge_line2 = 'iAddi ' + c + ' ZERO 0x1'
+        icmp_inst_judge_line3 = 'be ZERO ZERO ' + hex(ADDR_PER_WORD)
+        icmp_inst_judge_line4 = 'iAddi ' + c + ' ZERO 0x0'
+        icmp_inst_list.append(icmp_inst_judge_line0)
+        icmp_inst_list.append(icmp_inst_judge_line1)
+        icmp_inst_list.append(icmp_inst_judge_line2)
+        icmp_inst_list.append(icmp_inst_judge_line3)
+        icmp_inst_list.append(icmp_inst_judge_line4)
+    elif(cond == 'ule' or cond == 'sle'):
+        icmp_inst_judge_line0 = 'iAddi ' + c + ' ZERO 0x1'
+        icmp_inst_judge_line1 = 'be ASM ' + c + ' ' + hex(2 * ADDR_PER_WORD)
+        icmp_inst_judge_line2 = 'iAddi ' + c + ' ZERO 0x1'
+        icmp_inst_judge_line3 = 'be ZERO ZERO ' + hex(ADDR_PER_WORD)
+        icmp_inst_judge_line4 = 'iAddi ' + c + ' ZERO 0x0'
+        icmp_inst_list.append(icmp_inst_judge_line0)
+        icmp_inst_list.append(icmp_inst_judge_line1)
+        icmp_inst_list.append(icmp_inst_judge_line2)
+        icmp_inst_list.append(icmp_inst_judge_line3)
+        icmp_inst_list.append(icmp_inst_judge_line4)
+
+    return '\n'.join(icmp_inst_list)
+
+
 def isImm(string):
     if(isHex(string) or isDec(string)):
         return True
@@ -479,6 +678,12 @@ def isCallInst(string):
 
 def isFuncInst(string):
     if (len(string) > 3 and string[0] == 'define' and string[2][0] == '@'):
+        return True
+    else:
+        return False
+
+def isIcmpInst(string):
+    if (len(string) > 3 and string[2] == 'icmp'):
         return True
     else:
         return False

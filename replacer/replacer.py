@@ -125,5 +125,10 @@ for i, line in enumerate(replaced_line):
     elif (isFuncInst(string)):
         wfile.writelines(makeFuncInstList(string))
         wfile.write('\n')
+    #icmp
+    elif (isIcmpInst(string)):
+        wfile.writelines(makeIcmpInstList(string))
+        wfile.write('\n')
+    
 #print(variableTableList[0].table)
 #print(variableTableList[0].table[VARNAME])
