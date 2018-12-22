@@ -18,7 +18,13 @@ ALG_NONE = 0
 
 ADDR_PER_WORD = 0x04
 
-INIT_SP_ADDR = 0x20000
+FP_INIT = 0x20000 - 4
+SP_INIT = FP_INIT - 4
+GP_INIT = 0x18000
+RA_INIT = 0x13FFC
+PC_INIT = 0x04000
+
+ADDR_BAS_MASK = SP_INIT - 1
 
 FIRST_TIME = -1
 
@@ -62,8 +68,8 @@ class Stack:
 
 class MachineStatus:
     def __init__(self):
-        self.sp = INIT_SP_ADDR
-        self.sp = INIT_SP_ADDR
+        self.sp = SP_INIT
+        self.sp = SP_INIT
 
 class RegisterTable:
     def __init__(self, name):
@@ -280,8 +286,8 @@ def makeRetInstList(string, funcname):
     else:
         ret_inst_list0  = 'iAddi R0 ZERO ' + hex(int(ret))
 
-    if (funcname == '@main()'):
-        ret_inst_list1  = 'j 0x00'
+    if (funcname == '@main'):
+        ret_inst_list1  = 'jr RA'
     else:
         ret_inst_list1  = 'return'
     
@@ -627,6 +633,40 @@ def makeIcmpInstList(string):
 
     return '\n'.join(icmp_inst_list)
 
+def makeBrLongInst(string):
+    cond        = string[2]
+    true_label  = string[4]
+    false_label = string[6]
+    
+    #remove , -> space
+    cond        = cond.replace(',',' ')
+    true_label  = true_label.replace(',',' ')
+    false_label = false_label.replace(',',' ')
+    
+
+    br_long_inst_list = []
+    
+    br_long_inst_line0 = 'be ' + cond + ' ZERO ' + hex(ADDR_PER_WORD)
+    br_long_inst_line1 = 'j ' + true_label
+    br_long_inst_line2 = 'j ' + false_label
+    br_long_inst_list.append(br_long_inst_line0)
+    br_long_inst_list.append(br_long_inst_line1)
+    br_long_inst_list.append(br_long_inst_line2)
+    
+    return '\n'.join(br_long_inst_list)
+
+def makeBrShortInst(string):
+    jump_label  = string[2]
+    
+    #remove , -> space
+    jump_label  = jump_label.replace(',',' ')
+
+    br_short_inst_list = []
+    
+    br_short_inst_line0 = 'j ' + jump_label
+    br_short_inst_list.append(br_short_inst_line0)
+    
+    return '\n'.join(br_short_inst_list)
 
 def isImm(string):
     if(isHex(string) or isDec(string)):
@@ -688,6 +728,30 @@ def isIcmpInst(string):
     else:
         return False
 
+def isBrLongInst(string):
+    if (len(string) == 7 and string[0] == 'br'):
+        return True
+    else:
+        return False
+
+def isBrShortInst(string):
+    if (len(string) == 3 and string[0] == 'br'):
+        return True
+    else:
+        return False
+
+def isLabel(string):
+    if (len(string) > 1 and len(string[1]) > 8 and string[1][0:8] == '<label>:'):
+        return True
+    else:
+        return False
+
+def isReplacedLabel(string):
+    if (len(string) == 1 and string[0][-1] == ':'):
+        return True
+    else:
+        return False
+
 def readCallInfo(string):
     funcName = re.match('@[a-zA-Z_0-9]*', string[4]).group()
     arg = []
@@ -712,10 +776,19 @@ def replaceVariable(const_line, variableTableList):
     tableIndex = 0
     funcName = ''
     replaced_line = []
-    bracket_deep = 0 
+    bracket_deep = 0
     for i, line in enumerate(const_line):
         instStr = ''
         string = line.split()
+        if (isBrLongInst(string)):
+            string[4] = 'L' + string[4][1:]
+            string[6] = 'L' + string[6][1:]
+        if (isBrShortInst(string)):
+            string[2] = 'L' + string[2][1:]
+        if (isLabel(string)):
+            string[0] = 'L' + string[1][8:] + ':'
+            for j in range(1, len(string)):
+                string[j] = ''
         for j in range(len(string)):
             if (string[j] == 'define'):
                 funcName = re.match('@[a-zA-Z_0-9]*', string[2])
@@ -726,6 +799,8 @@ def replaceVariable(const_line, variableTableList):
                 if(bracket_deep == 0):
                     listIndex += 1
 
+            if(re.match(';', string[j])):#comment out
+                break
             #if var:
             ptn_var = re.match('^%[a-zA-Z_0-9]*', string[j])
             if ptn_var:
@@ -776,3 +851,8 @@ def isRegisterName(string):
 
     return False
 
+def higher16bit(i):
+    return (i >> 16)
+
+def lower16bit(i):
+    return i & 0xFFFF
