@@ -205,7 +205,6 @@ def makeAllocaInstList():
 def makeStoreInstList(string):
     src0 = string[2][0:-1]
     dst = string[4][0:-1]
-    
     store_inst_list = []
     
     if(isRegisterName(src0) == True):
@@ -216,22 +215,22 @@ def makeStoreInstList(string):
 
 def makeStoreListValImmAddrImm(valImm, addrImm):
     store_inst_list = []
-    store_inst_list0 = 'iAddi ASM ZERO ' + hex(int(valImm) >> 16)
+    store_inst_list0 = 'iAddi ASM ZERO ' + hex(higher16bit(int(valImm)))
     store_inst_list1 = 'Lsfti ASM ASM 0x10'
-    store_inst_list2 = 'iAddi ASM ASM ' + hex(int(valImm) & 0xFFFF)
+    store_inst_list2 = 'iAddi ASM ASM ' + hex(lower16bit(int(valImm)))
     if(isFPDiff(addrImm)):
         diffaddr = int(addrImm[3:])
         store_inst_list3 = 'iAddi R1 ZERO ' + hex(diffaddr >> 16)
         store_inst_list4 = 'Lsfti R1 R1 0x10'
         store_inst_list5 = 'iAddi R1 R1 ' + hex(diffaddr & 0xFFFF)
     elif(isHex(addrImm)):
-        store_inst_list3 = 'iAddi R1 ZERO ' + hex(int(addrImm, 16) >> 16)
+        store_inst_list3 = 'iAddi R1 ZERO ' + hex(higher16bit(int(addrImm, 16)))
         store_inst_list4 = 'Lsfti R1 R1 0x10'
-        store_inst_list5 = 'iAddi R1 R1 ' + hex(int(addrImm, 16) & 0xFFFF)
+        store_inst_list5 = 'iAddi R1 R1 ' + hex(lower16bit(int(addrImm, 16)))
     else:
-        store_inst_list3 = 'iAddi R1 ZERO ' + hex(int(addrImm) >> 16)
+        store_inst_list3 = 'iAddi R1 ZERO ' + hex(higher16bit(int(addrImm)))
         store_inst_list4 = 'Lsfti R1 R1 0x10'
-        store_inst_list5 = 'iAddi R1 R1 ' + hex(int(addrImm) & 0xFFFF)
+        store_inst_list5 = 'iAddi R1 R1 ' + hex(lower16bit(int(addrImm)))
     
     store_inst_list6 = 'iSub R1 FP R1'
     store_inst_list7 = 'sw ASM R1 0x00'
@@ -852,7 +851,7 @@ def isRegisterName(string):
     return False
 
 def higher16bit(i):
-    return (i >> 16)
+    return ((i & 0xFFFF0000) >> 16)
 
 def lower16bit(i):
-    return i & 0xFFFF
+    return i & 0x0000FFFF
