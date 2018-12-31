@@ -19,7 +19,7 @@ bracket_deep = 0
 for i, line in enumerate(line):
     
     string = line.split()
-    
+
     for j in range(len(string)):
         if (string[j] == 'define'):
             isFunc = True
@@ -27,9 +27,11 @@ for i, line in enumerate(line):
             bracket_deep+=1
         if(string[j] == '}'):
             bracket_deep-=1
-
+ 
     if(isFunc):
         wfile.write(line)
     
     if(bracket_deep == 0 and isFunc == True):
         isFunc = False
+
+

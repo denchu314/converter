@@ -171,6 +171,10 @@ for i, line in enumerate(replaced_line):
     elif (isAddInst(string)):
         wfile.writelines(makeAddInstList(string))
         wfile.write('\n')
+    #sub
+    elif (isSubInst(string)):
+        wfile.writelines(makeSubInstList(string))
+        wfile.write('\n')
     #call
     elif (isCallInst(string)):
         wfile.writelines(makeCallInstList(string))
