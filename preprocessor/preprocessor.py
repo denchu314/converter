@@ -6,12 +6,21 @@ OUTPUT_FILENAME = args[1] + '0'
 
 isFunc = False
 
-rfile = open(args[1], 'r')
-wfile = open(OUTPUT_FILENAME, 'w')
 
-line = rfile.readlines()
 
 bracket_deep = 0
+
+if (len(args) < 2):
+    print("usage: " + args[0] + " [preprocess_file_path] [-o output]")
+    exit()
+
+for i in range(len(args)):
+    if (args[i] == "-o"):
+        OUTPUT_FILENAME = args[i+1]
+
+rfile = open(args[1], 'r')
+wfile = open(OUTPUT_FILENAME, 'w')
+line = rfile.readlines()
 
 ###################
 # PRIPROCESS

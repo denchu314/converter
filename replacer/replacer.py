@@ -5,9 +5,19 @@ from replacer_func import *
 
 
 
+
 args = sys.argv
 
 OUTPUT_FILENAME = args[1][:-1] + '1'
+
+
+if (len(args) < 2):
+    print("usage: " + args[0] + " [replace_file_path] [-o output]")
+    exit()
+
+for i in range(len(args)):
+    if (args[i] == "-o"):
+        OUTPUT_FILENAME = args[i+1]
 
 rfile = open(args[1], 'r')
 wfile = open(OUTPUT_FILENAME, 'w')
