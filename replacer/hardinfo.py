@@ -1,1 +1,4 @@
-../../hardinfo.py
+#PC_INIT = 0x4000
+PC_INIT = 0x80
+FP_INIT = 0x1ac
+uartAddr = 0x2000
