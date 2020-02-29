@@ -3,8 +3,10 @@ import re
 from replacer_func import *
 #import subprocess
 
+from hardinfo import *
 
-
+# global strings
+globalString = [];
 
 args = sys.argv
 
@@ -141,9 +143,9 @@ wfile.write('iAddi RA RA ' + hex(lower16bit(RA_INIT)))
 wfile.write('\n')
 
 
-wfile.write('j 0x4000')
+wfile.write('j ' + hex(PC_INIT))
 wfile.write('\n')
-wfile.write('ori 0x4000')
+wfile.write('ori ' + hex(PC_INIT))
 wfile.write('\n')
 wfile.write('j @main')
 wfile.write('\n')
@@ -154,8 +156,11 @@ varName = ''
 for i, line in enumerate(replaced_line):
 #    print(replace)
     string = line.split()
+    # string
+    if (isGlobalString(string)):
+        globalString.append(readGlobalStringName(string))
     #funcDefinition
-    if (isFuncInst(string)):
+    elif (isFuncInst(string)):
         funcName, varName = readFuncInfo(string)
         print(funcName)
         wfile.writelines(makeFuncInstList(string))
@@ -187,7 +192,7 @@ for i, line in enumerate(replaced_line):
         wfile.write('\n')
     #call
     elif (isCallInst(string)):
-        wfile.writelines(makeCallInstList(string))
+        wfile.writelines(makeCallInstList(string, globalString))
         wfile.write('\n')
     #icmp
     elif (isIcmpInst(string)):

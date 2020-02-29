@@ -1,4 +1,5 @@
 import sys
+import re
 
 args = sys.argv
 
@@ -28,7 +29,12 @@ line = rfile.readlines()
 for i, line in enumerate(line):
     
     string = line.split()
+    
+    # string
+    if(len(string) > 0 and re.search(r'@\.str', string[0])):
+        wfile.write(line)
 
+    # function
     for j in range(len(string)):
         if (string[j] == 'define'):
             isFunc = True

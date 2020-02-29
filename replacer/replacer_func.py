@@ -1,5 +1,7 @@
 import re
 
+from hardinfo import *
+
 VARNAME     = 0
 ATTR        = 1
 START       = 2
@@ -18,7 +20,7 @@ ALG_NONE = 0
 
 ADDR_PER_WORD = 0x04
 
-FP_INIT = 0x20000 - 4
+#FP_INIT = 0x20000 - 4
 SP_INIT = FP_INIT 
 GP_INIT = 0x18000
 RA_INIT = 0x13FFC
@@ -37,7 +39,6 @@ tempRegisters = registers[0x12:0x1a]
 #    self.funcName = funcName
 #    self.start = 0
 #    self.end = 0
-
 
 
 class Stack:
@@ -206,17 +207,41 @@ def makeAllocaInstList():
     return '\n'.join(alloca_inst_list)
 
 def makeStoreInstList(string):
-    src0 = string[2][0:-1]
-    dst = string[4][0:-1]
+    operand_ptr = 0;
+    src0 = ''
+    dst = ''
+    for i in range(len(string)):
+        if (isVolatile(string[i])):
+            volatile_flag = 1
+        # string[i] == i32
+        elif (isType(string[i]) and operand_ptr == 0):
+            #print("aaaaaaaaaaaaa\n")
+            if(isCast(string[i+1])):
+                src0 = string[i+3].replace(",", "")
+            else:
+                src0 = string[i+1].replace(",", "")
+            operand_ptr = operand_ptr + 1
+        elif (isType(string[i]) and operand_ptr == 1):
+            #print("iiiiiiiiiiiiiiii\n")
+            if(isCast(string[i+1])):
+                dst = string[i+3].replace(",", "")
+            else:
+                dst = string[i+1].replace(",", "")
+            operand_ptr = operand_ptr + 1
+
     store_inst_list = []
     
-    if(isRegisterName(src0) == True):
-        store_inst_list = makeStoreListValRegAddrImm(src0, dst)
+    if(isRegisterName(src0) and isRegisterName(dst)):
+        store_inst_list = makeStoreList_Reg_Reg(src0, dst)
+    elif(isRegisterName(src0)):
+        store_inst_list = makeStoreList_Reg_Imm(src0, dst)
+    elif(isRegisterName(dst)):
+        store_inst_list = makeStoreList_Imm_Reg(src0, dst)
     else:
-        store_inst_list = makeStoreListValImmAddrImm(src0, dst)
+        store_inst_list = makeStoreList_Imm_Imm(src0, dst)
     return  store_inst_list
 
-def makeStoreListValImmAddrImm(valImm, addrImm):
+def makeStoreList_Imm_Imm(valImm, addrImm):
     store_inst_list = []
     store_inst_list0 = 'iAddi ASM ZERO ' + hex(higher16bit(int(valImm)))
     store_inst_list1 = 'Lsfti ASM ASM 0x10'
@@ -248,7 +273,7 @@ def makeStoreListValImmAddrImm(valImm, addrImm):
     store_inst_list.append(store_inst_list7)
     return '\n'.join(store_inst_list)
     
-def makeStoreListValRegAddrImm(valReg, addrImm):
+def makeStoreList_Reg_Imm(valReg, addrImm):
     store_inst_list = []
     if(isFPDiff(addrImm)):
         diffaddr = int(addrImm[3:])
@@ -273,9 +298,29 @@ def makeStoreListValRegAddrImm(valReg, addrImm):
         store_inst_list.append(store_inst_list3)
     store_inst_list.append(store_inst_list4)
     return '\n'.join(store_inst_list)
+
+
+def makeStoreList_Imm_Reg(valImm, addrReg):
+    store_inst_list = []
+    store_inst_list0 = 'iAddi ASM ZERO ' + hex(higher16bit(int(valImm)))
+    store_inst_list1 = 'Lsfti ASM ASM 0x10'
+    store_inst_list2 = 'iAddi ASM ASM ' + hex(lower16bit(int(valImm)))
     
+    store_inst_list3 = 'sw ASM ' + addrReg + ' 0x00'
 
+    store_inst_list.append(store_inst_list0)
+    store_inst_list.append(store_inst_list1)
+    store_inst_list.append(store_inst_list2)
+    store_inst_list.append(store_inst_list3)
+    return '\n'.join(store_inst_list)
 
+def makeStoreList_Reg_Reg(valReg, addrReg):
+    store_inst_list = []
+    
+    store_inst_list0 = 'sw ' + valReg + ' ' + addrReg + ' 0x00'
+
+    store_inst_list.append(store_inst_list0)
+    return '\n'.join(store_inst_list)
 
 #def makeRetInstList(imm0, funcname):
 def makeRetInstList(string, funcname):
@@ -305,29 +350,37 @@ def makeLoadInstList(string):
     #pointer?
     #if(string[5][-1:] == '*'):
     #hex value?
-    if(isFPDiff(src)):
-        diffaddr = int(src[3:])
-        load_inst_list0 = 'iAddi ASM ZERO ' + hex(diffaddr >> 16)
-        load_inst_list1 = 'Lsfti ASM ASM 0x10'
-        load_inst_list2 = 'iAddi ASM ASM ' + hex(diffaddr & 0xFFFF)
-        load_inst_list3 = 'iSub ASM FP ASM'
-    elif(src[0:2] == '0x'):
-        load_inst_list0 = 'iAddi ASM ZERO ' + hex(int(src, 16) >> 16)
-        load_inst_list1 = 'Lsfti ASM ASM 0x10'
-        load_inst_list2 = 'iAddi ASM ASM ' + hex(int(src, 16) & 0xFFFF)
+    if(isRegisterName(src)):
+        load_inst_list0 = 'lw ' + dst + ' ' +  src + ' 0x00'
+        load_inst_list.append(load_inst_list0)
+        return '\n'.join(load_inst_list)
     else:
-        load_inst_list0 = 'iAddi ASM ZERO ' + hex(int(src) >> 16)
-        load_inst_list1 = 'Lsfti ASM ASM 0x10'
-        load_inst_list2 = 'iAddi ASM ASM ' + hex(int(src) & 0xFFFF)
-    load_inst_list4 = 'lw ' + dst + ' ASM 0x00'
+        if(isFPDiff(src)):
+            diffaddr = int(src[3:])
+            load_inst_list0 = 'iAddi ASM ZERO ' + hex(diffaddr >> 16)
+            load_inst_list1 = 'Lsfti ASM ASM 0x10'
+            load_inst_list2 = 'iAddi ASM ASM ' + hex(diffaddr & 0xFFFF)
+            load_inst_list3 = 'iSub ASM FP ASM'
+        elif(isHex(src)):
+            load_inst_list0 = 'iAddi ASM ZERO ' + hex(int(src, 16) >> 16)
+            load_inst_list1 = 'Lsfti ASM ASM 0x10'
+            load_inst_list2 = 'iAddi ASM ASM ' + hex(int(src, 16) & 0xFFFF)
+        elif(isDec(src)):
+            load_inst_list0 = 'iAddi ASM ZERO ' + hex(int(src) >> 16)
+            load_inst_list1 = 'Lsfti ASM ASM 0x10'
+            load_inst_list2 = 'iAddi ASM ASM ' + hex(int(src) & 0xFFFF)
+        
+        load_inst_list4 = 'lw ' + dst + ' ASM 0x00'
 
-    load_inst_list.append(load_inst_list0)
-    load_inst_list.append(load_inst_list1)
-    load_inst_list.append(load_inst_list2)
-    if(isFPDiff(src)):
-        load_inst_list.append(load_inst_list3)
-    load_inst_list.append(load_inst_list4)
-    return '\n'.join(load_inst_list)
+        load_inst_list.append(load_inst_list0)
+        load_inst_list.append(load_inst_list1)
+        load_inst_list.append(load_inst_list2)
+        
+        if(isFPDiff(src)):
+            load_inst_list.append(load_inst_list3)
+        
+        load_inst_list.append(load_inst_list4)
+        return '\n'.join(load_inst_list)
     
 def makeAddInstList(string):
     dst = string[0]
@@ -484,50 +537,125 @@ def makeSubInstList(string):
     #print(sub_inst_list)
     return '\n'.join(sub_inst_list)
 
-def makeCallInstList(string):
+#def makeCallInstList(string, globalString):
+#    ret, funcName, arg = readCallInfo(string)
+#    call_inst_list = []
+#    if( len(arg) == 0 ):
+#        call_inst_list0 = 'call ' + funcName + ' ZERO ZERO ZERO ZERO'
+#    elif( len(arg) == 1 ):
+#        call_inst_list0 = 'call ' + funcName + ' ' + arg[0] + ' ZERO ZERO ZERO'
+#    elif( len(arg) == 2 ):
+#        call_inst_list0 = 'call ' + funcName + ' ' + arg[0] + ' ' + arg[1] + ' ZERO ZERO'
+#    elif( len(arg) == 3 ):
+#        call_inst_list0 = 'call ' + funcName + ' ' + arg[0] + ' ' + arg[1] + ' ' + arg[2] + ' ZERO'
+#    elif( len(arg) == 4 ):
+#        call_inst_list0 = 'call ' + funcName + ' ' + arg[0] + ' ' + arg[1] + ' ' + arg[2] + ' ' + arg[3]
+#    else:
+#        print('Error! call args must be less than 4 for now! Not implemented.')
+#        exit(1)
+#    
+#    call_inst_list1 = 'iAdd ' + ret + ' ZERO R0'
+#    call_inst_list.append(call_inst_list0)
+#    call_inst_list.append(call_inst_list1)
+#    #print(arg)
+#    return '\n'.join(call_inst_list)
+#
+def makeCallInstList(string, globalString):
+    print(string)
     ret, funcName, arg = readCallInfo(string)
     call_inst_list = []
-    if( len(arg) == 0 ):
-        call_inst_list0 = 'call ' + funcName + ' ZERO ZERO ZERO ZERO'
-    elif( len(arg) == 1 ):
-        call_inst_list0 = 'call ' + funcName + ' ' + arg[0] + ' ZERO ZERO ZERO'
-    elif( len(arg) == 2 ):
-        call_inst_list0 = 'call ' + funcName + ' ' + arg[0] + ' ' + arg[1] + ' ZERO ZERO'
-    elif( len(arg) == 3 ):
-        call_inst_list0 = 'call ' + funcName + ' ' + arg[0] + ' ' + arg[1] + ' ' + arg[2] + ' ZERO'
-    elif( len(arg) == 4 ):
-        call_inst_list0 = 'call ' + funcName + ' ' + arg[0] + ' ' + arg[1] + ' ' + arg[2] + ' ' + arg[3]
+    flag_pass = False;
+    pass_num = 0;
+    #lib subroutine
+    if(funcName == '@printf'):
+        for i in range(len(string)):
+            #result = re.match(r'@\.str([\.]?)([0-9]*)', string[i])
+            result = re.match(r'@\.str([\.]?)([0-9]*)', string[i])
+            #print(result.group())
+            # if string contains @str
+            if (result):
+                #print(result.group())
+                if(len(result.group()) > 6):
+                    strNum = int(result.group()[6:]);
+                else:
+                    strNum = 0;
+                    #print(result.group()[6:]);
+                #strNum = re.match(r'[0-9]+', result.group()).group();
+                #strNumResult = re.match(r'[0-9]+', result.group());
+                #strNumResult = re.sub("[\D]*", "", result.group());
+                #print(strNumResult);
+                #if(strNumResult):
+                #    strNum = re.sub('\D', '', strNumResult.group());
+                #    #print(strNum);
+                #else:
+                #    strNum = 0;
+                #   # if (strNumResult.group() == ''):
+                #   #     strNum = 0;
+                #   # else:
+                #   #     strNum = strNumResult.group();
+                #print(strNum)
+                break;
+
+        for i in range(len(globalString[strNum])):
+            if(globalString[strNum][i:i+3] == '\\10' ):
+                #print("break!20 " + str(i) + " " + globalString[strNum][i:i+3] )
+                call_inst_list.append('iAddi ASM ZERO 0x20');
+                call_inst_list.append('sw ASM ZERO ' + hex(uartAddr));
+                flag_pass = True;
+                pass_num = 0;
+                continue;
+            elif(globalString[strNum][i:i+3] == '\\20' ):
+                #print("break!20 " + str(i) + " " + globalString[strNum][i:i+3] )
+                call_inst_list.append('iAddi ASM ZERO 0x20');
+                call_inst_list.append('sw ASM ZERO ' + hex(uartAddr));
+                flag_pass = True;
+                pass_num = 0;
+                continue;
+            elif(globalString[strNum][i:i+3] == '\\0A' ):
+                #print("break!0A " + str(i) + " " + globalString[strNum][i:i+3] )
+                call_inst_list.append('iAddi ASM ZERO 0x0A');
+                call_inst_list.append('sw ASM ZERO ' + hex(uartAddr));
+                flag_pass = True;
+                pass_num = 0;
+                continue;
+            elif(globalString[strNum][i:i+3] == '\\00' ):
+                #print("break!00 " + str(i) + " " + globalString[strNum][i:i+3] )
+                break;
+            elif(flag_pass == True):
+                #print("pass! " + str(i) + " " + globalString[strNum][i:i+3] )
+                if(pass_num >= 1):
+                    flag_pass = False;
+                    pass_num = 0;
+                pass_num = pass_num + 1;
+                continue;
+            else:
+                #print("not break " + str(i) + " " + globalString[strNum][i])
+                call_inst_list.append('iAddi ASM ZERO ' + hex(ord(globalString[strNum][i])));
+                call_inst_list.append('sw ASM ZERO ' + hex(uartAddr));
+        print(call_inst_list)
+        return '\n'.join(call_inst_list)
+
+    #my subroutine
     else:
-        print('Error! call args must be less than 4 for now! Not implemented.')
-        exit(1)
-    
-    call_inst_list1 = 'iAdd ' + ret + ' ZERO R0'
-    call_inst_list.append(call_inst_list0)
-    call_inst_list.append(call_inst_list1)
-    #print(arg)
-    return '\n'.join(call_inst_list)
-def makeCallInstList(string):
-    ret, funcName, arg = readCallInfo(string)
-    call_inst_list = []
-    if( len(arg) == 0 ):
-        call_inst_list0 = 'call ' + funcName + ' ZERO ZERO ZERO ZERO'
-    elif( len(arg) == 1 ):
-        call_inst_list0 = 'call ' + funcName + ' ' + arg[0] + ' ZERO ZERO ZERO'
-    elif( len(arg) == 2 ):
-        call_inst_list0 = 'call ' + funcName + ' ' + arg[0] + ' ' + arg[1] + ' ZERO ZERO'
-    elif( len(arg) == 3 ):
-        call_inst_list0 = 'call ' + funcName + ' ' + arg[0] + ' ' + arg[1] + ' ' + arg[2] + ' ZERO'
-    elif( len(arg) == 4 ):
-        call_inst_list0 = 'call ' + funcName + ' ' + arg[0] + ' ' + arg[1] + ' ' + arg[2] + ' ' + arg[3]
-    else:
-        print('Error! call args must be less than 4 for now! Not implemented.')
-        exit(1)
-    
-    call_inst_list1 = 'iAdd ' + ret + ' ZERO R0'
-    call_inst_list.append(call_inst_list0)
-    call_inst_list.append(call_inst_list1)
-    #print(arg)
-    return '\n'.join(call_inst_list)
+        if( len(arg) == 0 ):
+            call_inst_list0 = 'call ' + funcName + ' ZERO ZERO ZERO ZERO'
+        elif( len(arg) == 1 ):
+            call_inst_list0 = 'call ' + funcName + ' ' + arg[0] + ' ZERO ZERO ZERO'
+        elif( len(arg) == 2 ):
+            call_inst_list0 = 'call ' + funcName + ' ' + arg[0] + ' ' + arg[1] + ' ZERO ZERO'
+        elif( len(arg) == 3 ):
+            call_inst_list0 = 'call ' + funcName + ' ' + arg[0] + ' ' + arg[1] + ' ' + arg[2] + ' ZERO'
+        elif( len(arg) == 4 ):
+            call_inst_list0 = 'call ' + funcName + ' ' + arg[0] + ' ' + arg[1] + ' ' + arg[2] + ' ' + arg[3]
+        else:
+            print('Error! call args must be less than 4 for now! Not implemented.')
+            exit(1)
+        
+        call_inst_list1 = 'iAdd ' + ret + ' ZERO R0'
+        call_inst_list.append(call_inst_list0)
+        call_inst_list.append(call_inst_list1)
+        #print(arg)
+        return '\n'.join(call_inst_list)
 
 def makeFuncInstList(string):
     #funcName = re.match('@[a-zA-Z_0-9]*', string[2]).group()
@@ -865,7 +993,12 @@ def isReplacedLabel(string):
         return False
 
 def readCallInfo(string):
-    funcName = re.match('@[a-zA-Z_0-9]*', string[4]).group()
+    for i in range(len(string)):
+        result = re.match('@[a-zA-Z_0-9]*', string[i])
+        if (result):
+            funcName = result.group();
+            break;
+
     arg = []
     for i in range(5, len(string), 2):
         arg.append(re.match('[a-zA-Z_0-9]*', string[i]).group())
@@ -955,6 +1088,24 @@ def isFPDiff(val):
     else:
         return False
 
+def isType(string):
+    if(re.match("^i[0-9]+\**$", string)):
+        return True
+    else:
+        return False
+
+def isVolatile(string):
+    if(re.match("volatile", string)):
+        return True
+    else:
+        return False
+
+def isCast(string):
+    if(re.match("inttoptr", string)):
+        return True
+    else:
+        return False
+
 def isRegisterName(string):
     #print(string)
     for i in range(len(registers)):
@@ -963,8 +1114,24 @@ def isRegisterName(string):
 
     return False
 
+def isGlobalString(string):
+    if(len(string) >= 1 and re.match(r'@.str', string[0])):
+        return True
+    else:
+        return False
+
 def higher16bit(i):
     return ((i & 0xFFFF0000) >> 16)
 
 def lower16bit(i):
     return i & 0x0000FFFF
+
+def readGlobalStringName(string):
+    print(string)
+    for i in range(len(string)):
+        result = re.match(r'c".*"', string[i])
+        if (result):
+            charString = result.group()[2:-1]
+            break;
+
+    return charString;
